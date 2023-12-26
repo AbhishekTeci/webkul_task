@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:webkul_task/helper/routes.dart';
 import '../../helper/Color.dart';
 import '../../helper/app_button.dart';
 import '../../helper/constant.dart';
@@ -149,8 +150,7 @@ class _LoginState extends State<Login> {
           ),
           InkWell(
             onTap: () {
-
-
+              Routes.navigateToSignupScreen(context);
             },
             child: Text(
               'Sign Up',

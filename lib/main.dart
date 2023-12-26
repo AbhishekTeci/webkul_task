@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webkul_task/provider/login_provider.dart';
+import 'package:webkul_task/provider/signup_provider.dart';
 import 'package:webkul_task/views/login/login_view.dart';
 
 void main() {
@@ -17,6 +18,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<LoginProvider>(
             create: (context) => LoginProvider()),
+        ChangeNotifierProvider<SignupProvider>(
+            create: (context) => SignupProvider()),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',

@@ -28,6 +28,30 @@ class StringValidation {
     return null;
   }
 
+  static String? validateEmail(String value, String? msg1, String? msg2) {
+    if (value.isEmpty) {
+      return msg1;
+    } else if (!RegExp(
+        r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)"
+        r'*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+'
+        r'[a-z0-9](?:[a-z0-9-]*[a-z0-9])?')
+        .hasMatch(value)) {
+      return msg2;
+    } else {
+      return null;
+    }
+  }
+
+  static String? validateUserName(String value, String? msg1, String? msg2) {
+    if (value.isEmpty) {
+      return msg1;
+    }
+    if (value.length <= 1) {
+      return msg2;
+    }
+    return null;
+  }
+
 
 
 }
