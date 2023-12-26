@@ -1,14 +1,14 @@
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webkul_task/helper/routes.dart';
+import 'package:webkul_task/helper/snackbar.dart';
 import '../../helper/Color.dart';
 import '../../helper/app_button.dart';
 import '../../helper/constant.dart';
 import '../../helper/validator.dart';
 import '../../provider/login_provider.dart';
-
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -22,13 +22,11 @@ class _LoginState extends State<Login> {
 //============================= Variables Declaration ==========================
 
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
-  GlobalKey<ScaffoldMessengerState>();
+      GlobalKey<ScaffoldMessengerState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  TextEditingController mobilenumberController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
   FocusNode? passFocus, monoFocus = FocusNode();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  final mobileController = TextEditingController();
 
 //==============================================================================
 //============================= INIT Method ====================================
@@ -37,24 +35,17 @@ class _LoginState extends State<Login> {
   }
 
   bool isShowPass = true;
+
   @override
   void initState() {
     super.initState();
 
     setState(
-          () {
-        mobileController.text = "";
-        passwordController.text = "";
+      () {
+        context.read<LoginProvider>().mobileNumberController.text = "";
       },
     );
   }
-
-
-
-
-
-
-
 
   bool validateAndSave() {
     final form = _formkey.currentState!;
@@ -74,7 +65,6 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
-
 //==============================================================================
 //============================= Build Method ===================================
 
@@ -86,7 +76,7 @@ class _LoginState extends State<Login> {
       key: scaffoldMessengerKey,
       child: Scaffold(
         key: _scaffoldKey,
-        body:SingleChildScrollView(
+        body: SingleChildScrollView(
           padding: EdgeInsets.only(
             top: 23,
             left: 23,
@@ -102,7 +92,6 @@ class _LoginState extends State<Login> {
                 signInTxt(),
                 signInSubTxt(),
                 setMobileNo(),
-                setPass(),
                 loginBtn(),
                 setDontHaveAcc(),
                 // termAndPolicyTxt(),
@@ -115,6 +104,36 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
+  }
+
+  Future<void> verifyPhoneNumber() async {
+    await _firebaseAuth.verifyPhoneNumber(
+      phoneNumber:
+          '+91${context.read<LoginProvider>().mobileNumberController.text}',
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-retrieval of verification code completed.
+        // Sign in with the credentials.
+        await _firebaseAuth.signInWithCredential(credential);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        onFailed('LoginError ${e.message}' ?? 'Verification failed');
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        debugPrint('verificationId $verificationId');
+        onCodeSent(verificationId);
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+  }
+
+  onCodeSent(String verificationId) {
+    context.read<LoginProvider>().setVerificationId(verificationId);
+    Routes.navigateToVerifyOtpView(
+        context, context.read<LoginProvider>().mobileNumberController.text);
+  }
+
+  onFailed(String message) {
+    setSnackbar(message, context);
   }
 
   Widget setSignInLabel() {
@@ -143,10 +162,10 @@ class _LoginState extends State<Login> {
           Text(
             "Don't have an account? ",
             style: Theme.of(context).textTheme.subtitle2!.copyWith(
-              color: black,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'ubuntu',
-            ),
+                  color: black,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'ubuntu',
+                ),
           ),
           InkWell(
             onTap: () {
@@ -155,10 +174,10 @@ class _LoginState extends State<Login> {
             child: Text(
               'Sign Up',
               style: Theme.of(context).textTheme.subtitle2!.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'ubuntu',
-              ),
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'ubuntu',
+                  ),
             ),
           )
         ],
@@ -186,7 +205,7 @@ class _LoginState extends State<Login> {
               fontWeight: FontWeight.bold,
               fontSize: textFontSize13),
           keyboardType: TextInputType.number,
-          controller: mobileController,
+          controller: context.read<LoginProvider>().mobileNumberController,
           focusNode: monoFocus,
           textInputAction: TextInputAction.next,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -204,74 +223,8 @@ class _LoginState extends State<Login> {
               border: InputBorder.none),
           validator: (val) => StringValidation.validateMob(val!, context),
           onSaved: (String? value) {
-            context.read<LoginProvider>().mobile = value;
+            context.read<LoginProvider>().setMobileNumber(value);
           },
-        ),
-      ),
-    );
-  }
-
-  setPass() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 18),
-      child: Container(
-        height: 53,
-        width: double.maxFinite,
-        decoration: BoxDecoration(
-          color: lightWhite,
-          borderRadius: BorderRadius.circular(circularBorderRadius10),
-        ),
-        alignment: Alignment.center,
-        child: TextFormField(
-          style: TextStyle(
-              color: black.withOpacity(0.7),
-              fontWeight: FontWeight.bold,
-              fontSize: textFontSize13),
-          onFieldSubmitted: (v) {
-            passFocus!.unfocus();
-          },
-          keyboardType: TextInputType.text,
-          obscureText: isShowPass,
-          controller: passwordController,
-          focusNode: passFocus,
-          textInputAction: TextInputAction.next,
-          validator: (val) => StringValidation.validatePass(val!, context),
-          onSaved: (String? value) {
-            context.read<LoginProvider>().password = value;
-          },
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 5,
-            ),
-            suffixIcon: InkWell(
-              onTap: () {
-                setState(
-                      () {
-                    isShowPass = !isShowPass;
-                  },
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsetsDirectional.only(end: 10.0),
-                child: Icon(
-                  !isShowPass ? Icons.visibility : Icons.visibility_off,
-                  color: fontColor.withOpacity(0.4),
-                  size: 22,
-                ),
-              ),
-            ),
-            suffixIconConstraints:
-            const BoxConstraints(minWidth: 40, maxHeight: 20),
-            hintText: 'Password',
-            hintStyle: TextStyle(
-              color: fontColor.withOpacity(0.3),
-              fontWeight: FontWeight.bold,
-              fontSize: textFontSize13,
-            ),
-            fillColor: lightWhite,
-            border: InputBorder.none,
-          ),
         ),
       ),
     );
@@ -282,10 +235,12 @@ class _LoginState extends State<Login> {
       padding: const EdgeInsets.only(top: 10.0),
       child: Center(
         child: AppBtn(
-          title:'Login',
+          title: 'Login',
           btnCntrl: context.read<LoginProvider>().buttonController,
           onBtnSelected: () async {
-
+            if (validateAndSave()) {
+              verifyPhoneNumber();
+            }
           },
         ),
       ),
@@ -296,10 +251,11 @@ class _LoginState extends State<Login> {
     return Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.only(top: 30),
-        child: Image.asset('assets/image/logo.png',
-          height: MediaQuery.of(context).size.height*0.2,
-          width: MediaQuery.of(context).size.width,)
-    );
+        child: Image.asset(
+          'assets/image/logo.png',
+          height: MediaQuery.of(context).size.height * 0.2,
+          width: MediaQuery.of(context).size.width,
+        ));
   }
 
   signInSubTxt() {
@@ -310,10 +266,10 @@ class _LoginState extends State<Login> {
       child: Text(
         'Please enter your login details below to start using app.',
         style: Theme.of(context).textTheme.subtitle2!.copyWith(
-          color: black.withOpacity(0.38),
-          fontWeight: FontWeight.bold,
-          fontFamily: 'ubuntu',
-        ),
+              color: black.withOpacity(0.38),
+              fontWeight: FontWeight.bold,
+              fontFamily: 'ubuntu',
+            ),
       ),
     );
   }
@@ -326,17 +282,15 @@ class _LoginState extends State<Login> {
       child: Text(
         "Welcome to Webkul Movies App",
         style: Theme.of(context).textTheme.headline6!.copyWith(
-          color: black,
-          fontWeight: FontWeight.bold,
-          fontSize: textFontSize20,
-          letterSpacing: 0.8,
-          fontFamily: 'ubuntu',
-        ),
+              color: black,
+              fontWeight: FontWeight.bold,
+              fontSize: textFontSize20,
+              letterSpacing: 0.8,
+              fontFamily: 'ubuntu',
+            ),
       ),
     );
   }
-
-
 }
 
 setSnackbarScafold(

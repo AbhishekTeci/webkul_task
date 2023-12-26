@@ -1,22 +1,33 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
-import '../helper/constant.dart';
 
 class SignupProvider extends ChangeNotifier {
 
-  String? mobile, password,confirmPassword,signUPEmail, username;
+  String? mobile,signUPEmail, username;
+  TextEditingController nameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController mobileController = TextEditingController();
+  String? signupOtpCode;
+
   AnimationController? buttonController;
 
   get getMobilenumber => mobile;
-  get getPassword => Password;
+  get getEmailId => signUPEmail;
+  get getSignupOtpCode => signupOtpCode;
 
   setMobileNumber(String? value){
     mobile = value;
     notifyListeners();
   }
 
+  setOtpCode(String? otp){
+    signupOtpCode = otp;
+    notifyListeners();
+  }
 
-  setSingUp(String? value) {
+
+  setSingUpEmail(String? value) {
     signUPEmail = value;
     notifyListeners();
   }
@@ -25,6 +36,9 @@ class SignupProvider extends ChangeNotifier {
     username = value;
     notifyListeners();
   }
+
+
+
 
 
 

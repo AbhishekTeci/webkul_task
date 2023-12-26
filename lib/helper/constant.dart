@@ -1,5 +1,16 @@
 
 const String apikey = "6b692b63427c54c00336888a46c856b5";
+const String imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
+const String baseUrl = 'api.themoviedb.org';
+
+const String moviesList = '/3/movie/popular';
+const String moviesSearch = '/3/search/movie';
+const String language = 'en-US';
+
+const String TIME = 'time';
+const String DATE = 'date';
+
+
 
 double height = 0;
 double width = 0;
@@ -9,14 +20,6 @@ const String PASS_LENGTH = 'Password length is short';
 const String VAL_MOB = 'Mobile number is required';
 const String MOB_LEN = 'Mobile number is invalid';
 const String Password = 'password';
-
-
-
-
-
-
-
-
 
 
 //Radius

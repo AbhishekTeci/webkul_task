@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 
 setSnackbar(String msg, context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: SizedBox(
-        child: Text(
-          msg,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.black,
-          ),
-        ),
-      ),
-      duration: const Duration(
-        seconds: 2,
-      ),
+
+  return Fluttertoast.showToast(
+      msg: msg,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 1,
       backgroundColor: Colors.red,
-      //behavior: SnackBarBehavior.floating,
-      elevation: 1.0,
-    ),
+      textColor: Colors.white,
+      fontSize: 16.0
   );
+}
+
+class ApiException implements Exception {
+  ApiException(this.errorMessage);
+
+  String errorMessage;
+
+  @override
+  String toString() {
+    return errorMessage;
+  }
 }

@@ -1,11 +1,15 @@
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:webkul_task/helper/Color.dart';
 import 'package:webkul_task/helper/app_button.dart';
 import 'package:webkul_task/helper/constant.dart';
+import 'package:webkul_task/helper/routes.dart';
+import 'package:webkul_task/helper/snackbar.dart';
 import 'package:webkul_task/helper/validator.dart';
+import 'package:webkul_task/provider/login_provider.dart';
 
 import '../../provider/signup_provider.dart';
 
@@ -18,13 +22,10 @@ class Signup extends StatefulWidget {
 
 class _SignupState extends State<Signup> {
 
-  TextEditingController mobilenumberController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmpassController = TextEditingController();
-  TextEditingController nameController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
   FocusNode? passFocus, monoFocus,nameFocus, emailFocus = FocusNode();
-  final mobileController = TextEditingController();
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
+
 
 
   _fieldFocusChange(
@@ -43,6 +44,15 @@ class _SignupState extends State<Signup> {
         fit: BoxFit.contain,
       ),
     );
+  }
+
+  bool validateAndSave() {
+    final form = _formkey.currentState!;
+    form.save();
+    if (form.validate()) {
+      return true;
+    }
+    return false;
   }
 
   welcomeEshopTxt() {
@@ -79,7 +89,7 @@ class _SignupState extends State<Signup> {
               fontWeight: FontWeight.bold,
               fontSize: textFontSize13),
           keyboardType: TextInputType.number,
-          controller: mobileController,
+          controller: context.read<SignupProvider>().mobileController,
           focusNode: monoFocus,
           textInputAction: TextInputAction.next,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -90,111 +100,20 @@ class _SignupState extends State<Signup> {
               ),
               hintText: 'Mobile Number',
               hintStyle: TextStyle(
-                  color: black.withOpacity(0.3),
+                  color: black.withOpacity(0.5),
                   fontWeight: FontWeight.bold,
                   fontSize: textFontSize13),
               fillColor: lightWhite,
               border: InputBorder.none),
           validator: (val) => StringValidation.validateMob(val!, context),
           onSaved: (String? value) {
-            context.read<SignupProvider>().mobile = value;
+            context.read<SignupProvider>().setMobileNumber(value);
           },
         ),
       ),
     );
   }
 
-  setPass() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 40),
-      child: Container(
-        height: 53,
-        width: double.maxFinite,
-        decoration: BoxDecoration(
-          color: lightWhite,
-          borderRadius: BorderRadius.circular(circularBorderRadius10),
-        ),
-        alignment: Alignment.center,
-        child: TextFormField(
-          style: TextStyle(
-              color: black.withOpacity(0.7),
-              fontWeight: FontWeight.bold,
-              fontSize: textFontSize13),
-          keyboardType: TextInputType.text,
-          obscureText: true,
-          controller: passwordController,
-          textInputAction: TextInputAction.next,
-          validator: (val) => StringValidation.validatePass(val, context),
-          onSaved: (String? value) {
-            context.read<SignupProvider>().password = value;
-          },
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 5,
-            ),
-            hintText: 'Password',
-            hintStyle: TextStyle(
-                color: black.withOpacity(0.3),
-                fontWeight: FontWeight.bold,
-                fontSize: textFontSize13),
-            fillColor: lightWhite,
-            border: InputBorder.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  setConfirmpss() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 18),
-      child: Container(
-        height: 53,
-        width: double.maxFinite,
-        decoration: BoxDecoration(
-          color: lightWhite,
-          borderRadius: BorderRadius.circular(circularBorderRadius10),
-        ),
-        alignment: Alignment.center,
-        child: TextFormField(
-          style: TextStyle(
-              color: black.withOpacity(0.7),
-              fontWeight: FontWeight.bold,
-              fontSize: textFontSize13),
-          keyboardType: TextInputType.text,
-          obscureText: true,
-          controller: confirmpassController,
-          validator: (value) {
-            if (value!.isEmpty) {
-              return 'Password is required';
-            }
-            if (value != context.read<SignupProvider>().password) {
-              return 'Password not match';
-            } else {
-              return null;
-            }
-          },
-          onSaved: (String? value) {
-            context.read<SignupProvider>().confirmPassword = value;
-          },
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 5,
-            ),
-            hintText: 'Confirm Password',
-            hintStyle: TextStyle(
-                color: black.withOpacity(0.3),
-                fontWeight: FontWeight.bold,
-                fontSize: textFontSize13),
-            fillColor: lightWhite,
-            border: InputBorder.none,
-          ),
-        ),
-      ),
-    );
-  }
 
   signupBtn() {
     return Padding(
@@ -204,7 +123,9 @@ class _SignupState extends State<Signup> {
           title:'Signup',
           btnCntrl: context.read<SignupProvider>().buttonController,
           onBtnSelected: () async {
-
+            if (validateAndSave()) {
+              signInWithPhoneNumber();
+            }
           },
         ),
       ),
@@ -229,6 +150,30 @@ class _SignupState extends State<Signup> {
     );
   }
 
+
+  Future<void> signInWithPhoneNumber() async {
+    try {
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: context.read<LoginProvider>().getVerificationId,
+        smsCode: context.read<LoginProvider>().getOtpValue,
+      );
+      UserCredential result = await _firebaseAuth.signInWithCredential(credential);
+      onSignInSuccess(result.user!);
+    } catch (e) {
+      debugPrint(e.toString());
+      onSignInFailed();
+    }
+  }
+
+  onSignInSuccess(User){
+    Routes.navigateToVerifyOtpView(context,context.read<SignupProvider>().mobileController.text);
+    setSnackbar('SigIn In Success', context);
+  }
+
+  onSignInFailed(){
+   setSnackbar('SigIn In failed', context);
+  }
+
   setUserName() {
     return Padding(
       padding: const EdgeInsets.only(top:20),
@@ -246,7 +191,7 @@ class _SignupState extends State<Signup> {
               fontSize: textFontSize13),
           keyboardType: TextInputType.text,
           textCapitalization: TextCapitalization.words,
-          controller: nameController,
+          controller: context.read<SignupProvider>().nameController,
           focusNode: nameFocus,
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(
@@ -315,7 +260,7 @@ class _SignupState extends State<Signup> {
           keyboardType: TextInputType.emailAddress,
           focusNode: emailFocus,
           textInputAction: TextInputAction.next,
-          controller: emailController,
+          controller: context.read<SignupProvider>().emailController,
           decoration: InputDecoration(
             labelText: 'Email',
             contentPadding: const EdgeInsets.symmetric(
@@ -355,7 +300,7 @@ class _SignupState extends State<Signup> {
             'Invalid email',
           ),
           onSaved: (String? value) {
-            context.read<SignupProvider>().setSingUp(value);
+            context.read<SignupProvider>().setSingUpEmail(value);
           },
           onFieldSubmitted: (v) {
             _fieldFocusChange(
@@ -380,20 +325,20 @@ class _SignupState extends State<Signup> {
         color: Colors.white,
         padding: const EdgeInsetsDirectional.all(8.0),
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // skipSignInBtn(),
-              _subLogo(),
-              welcomeEshopTxt(),
-              signUpTxt(),
-              setMobileNo(),
-              setPass(),
-              setConfirmpss(),
-              signupBtn()
-              // eCommerceforBusinessTxt(),
-              // bottomBtn()
-            ],
+          child: Form(
+            key: _formkey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _subLogo(),
+                welcomeEshopTxt(),
+                signUpTxt(),
+                setUserName(),
+                setEmail(),
+                setMobileNo(),
+                signupBtn()
+              ],
+            ),
           ),
         ),
       ),
